@@ -1,2 +1,3 @@
 aiogram
 img2pdf
+aiohttp
