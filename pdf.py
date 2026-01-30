@@ -7,6 +7,7 @@ from aiogram.filters import Command
 from aiogram.types import FSInputFile, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
 
 # --- SOZLAMALAR ---
+# Tokenni xavfsizlik uchun Render Environment Variables'dan olish tavsiya etiladi
 TOKEN = "8579089955:AAFIDdY6qOE7BG8o4jqYRPoNRwQmYrA88Ys"
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
@@ -78,6 +79,7 @@ async def finalize_pdf(callback: types.CallbackQuery):
         
         await callback.message.answer_document(FSInputFile(pdf_name), caption="📚 Marhamat!")
         
+        # Fayllarni o'chirish
         for img in user_data[user_id]['images']: 
             if os.path.exists(img): os.remove(img)
         if os.path.exists(pdf_name): os.remove(pdf_name)
@@ -87,29 +89,24 @@ async def finalize_pdf(callback: types.CallbackQuery):
     except Exception as e:
         await callback.message.answer(f"Xato yuz berdi: {e}")
 
-# --- RENDER UCHUN VEB-SERVER (PORT OCHISH) ---
+# --- RENDER PORTINI ALDASH UCHUN SERVER ---
 async def handle(request):
-    return web.Response(text="Bot is live and running!")
+    return web.Response(text="Bot is live!")
 
-async def start_web_server():
+async def main():
+    # Veb serverni alohida task qilib ishga tushiramiz
     app = web.Application()
     app.router.add_get('/', handle)
     runner = web.AppRunner(app)
     await runner.setup()
     port = int(os.environ.get("PORT", 8080))
     site = web.TCPSite(runner, '0.0.0.0', port)
-    await site.start()
-    print(f"Web server started on port {port}")
-
-# --- ASOSIY ISHGA TUSHIRISH ---
-async def main():
-    # Bir vaqtning o'zida ham veb-serverni, ham botni ishga tushiramiz
-    asyncio.create_task(start_web_server())
-    print("Bot ishga tushmoqda...")
-    await dp.start_polling(bot)
+    
+    # Ham serverni, ham botni parallel ishga tushirish
+    await asyncio.gather(
+        site.start(),
+        dp.start_polling(bot)
+    )
 
 if __name__ == "__main__":
-    try:
-        asyncio.run(main())
-    except (KeyboardInterrupt, SystemExit):
-        print("Bot to'xtatildi")
+    asyncio.run(main())
