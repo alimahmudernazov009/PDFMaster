@@ -1,17 +1,18 @@
 import os
 import img2pdf
 import asyncio
+from aiohttp import web
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
 from aiogram.types import FSInputFile, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
 
+# --- SOZLAMALAR ---
 TOKEN = "8579089955:AAFIDdY6qOE7BG8o4jqYRPoNRwQmYrA88Ys"
-
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
-
 user_data = {}
 
+# --- KLAVIATURALAR ---
 def get_start_keyboard():
     return ReplyKeyboardMarkup(
         keyboard=[[KeyboardButton(text="🖼 Rasm tanlash")]],
@@ -23,6 +24,7 @@ def get_pdf_inline_keyboard():
         [InlineKeyboardButton(text="✅ PDF-ni yakunlash", callback_data="make_pdf")]
     ])
 
+# --- BOT HANDLERLARI ---
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
     user_id = message.from_user.id
@@ -31,8 +33,6 @@ async def cmd_start(message: types.Message):
 
 @dp.message(F.text == "🖼 Rasm tanlash")
 async def rasm_tanlash(message: types.Message):
-    # Bu yerda stiker yoki rasm yuborish mumkin
-    # Masalan, ko'rsatkich barmog'i stikeri:
     await message.answer("👇 Pastdagi skrepka (📎) belgisini bosing va rasmlarni tanlang!")
 
 @dp.message(F.photo)
@@ -78,40 +78,38 @@ async def finalize_pdf(callback: types.CallbackQuery):
         
         await callback.message.answer_document(FSInputFile(pdf_name), caption="📚 Marhamat!")
         
-        for img in user_data[user_id]['images']: os.remove(img)
-        os.remove(pdf_name)
+        for img in user_data[user_id]['images']: 
+            if os.path.exists(img): os.remove(img)
+        if os.path.exists(pdf_name): os.remove(pdf_name)
+        
         await callback.message.delete()
         del user_data[user_id]
     except Exception as e:
-        await callback.message.answer(f"Xato: {e}")
+        await callback.message.answer(f"Xato yuz berdi: {e}")
 
-
-
-import os
-from aiohttp import web
-import asyncio
-
-# Render port so'ragani uchun soxta server
+# --- RENDER UCHUN VEB-SERVER (PORT OCHISH) ---
 async def handle(request):
-    return web.Response(text="Bot is live!")
+    return web.Response(text="Bot is live and running!")
 
 async def start_web_server():
     app = web.Application()
     app.router.add_get('/', handle)
     runner = web.AppRunner(app)
     await runner.setup()
-    site = web.TCPSite(runner, '0.0.0.0', int(os.environ.get("PORT", 8080)))
+    port = int(os.environ.get("PORT", 8080))
+    site = web.TCPSite(runner, '0.0.0.0', port)
     await site.start()
+    print(f"Web server started on port {port}")
 
-# Botni ishga tushirish qismini (agar executor bo'lsa) shunday o'zgartiring:
-if __name__ == '__main__':
-    loop = asyncio.get_event_loop()
-    loop.create_task(start_web_server()) # Soxta serverni ishga tushirish
-    executor.start_polling(dp, skip_updates=True)
-
+# --- ASOSIY ISHGA TUSHIRISH ---
 async def main():
+    # Bir vaqtning o'zida ham veb-serverni, ham botni ishga tushiramiz
+    asyncio.create_task(start_web_server())
+    print("Bot ishga tushmoqda...")
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
-
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except (KeyboardInterrupt, SystemExit):
+        print("Bot to'xtatildi")
