@@ -85,8 +85,33 @@ async def finalize_pdf(callback: types.CallbackQuery):
     except Exception as e:
         await callback.message.answer(f"Xato: {e}")
 
+
+
+import os
+from aiohttp import web
+import asyncio
+
+# Render port so'ragani uchun soxta server
+async def handle(request):
+    return web.Response(text="Bot is live!")
+
+async def start_web_server():
+    app = web.Application()
+    app.router.add_get('/', handle)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, '0.0.0.0', int(os.environ.get("PORT", 8080)))
+    await site.start()
+
+# Botni ishga tushirish qismini (agar executor bo'lsa) shunday o'zgartiring:
+if __name__ == '__main__':
+    loop = asyncio.get_event_loop()
+    loop.create_task(start_web_server()) # Soxta serverni ishga tushirish
+    executor.start_polling(dp, skip_updates=True)
+
 async def main():
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
+
     asyncio.run(main())
