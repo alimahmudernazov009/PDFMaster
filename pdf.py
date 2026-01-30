@@ -92,7 +92,7 @@ async def handle(request):
     return web.Response(text="Bot is running!")
 
 async def main():
-    # Veb-serverni sozlash
+    # Serverni ishga tushirish (Koyeb uchun)
     app = web.Application()
     app.router.add_get('/', handle)
     runner = web.AppRunner(app)
@@ -101,9 +101,9 @@ async def main():
     site = web.TCPSite(runner, '0.0.0.0', port)
     await site.start()
     
-    # Botni polling rejimida ishga tushirish
+    # Botni ishga tushirish (aiogram 3.x uchun to'g'ri yo'l)
+    print("Bot ishga tushdi...")
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
-    # Eng asosiysi: asyncio.run() ishlatamiz
     asyncio.run(main())
