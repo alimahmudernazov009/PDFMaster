@@ -7,7 +7,6 @@ from aiogram.filters import Command
 from aiogram.types import FSInputFile, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
 
 # --- SOZLAMALAR ---
-# Tokenni xavfsizlik uchun Render Environment Variables'dan olish tavsiya etiladi
 TOKEN = "8579089955:AAFIDdY6qOE7BG8o4jqYRPoNRwQmYrA88Ys"
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
@@ -79,7 +78,6 @@ async def finalize_pdf(callback: types.CallbackQuery):
         
         await callback.message.answer_document(FSInputFile(pdf_name), caption="📚 Marhamat!")
         
-        # Fayllarni o'chirish
         for img in user_data[user_id]['images']: 
             if os.path.exists(img): os.remove(img)
         if os.path.exists(pdf_name): os.remove(pdf_name)
@@ -89,24 +87,23 @@ async def finalize_pdf(callback: types.CallbackQuery):
     except Exception as e:
         await callback.message.answer(f"Xato yuz berdi: {e}")
 
-# --- RENDER PORTINI ALDASH UCHUN SERVER ---
+# --- RENDER UCHUN PORT OCHISH ---
 async def handle(request):
-    return web.Response(text="Bot is live!")
+    return web.Response(text="Bot is running!")
 
 async def main():
-    # Veb serverni alohida task qilib ishga tushiramiz
+    # Veb-serverni sozlash
     app = web.Application()
     app.router.add_get('/', handle)
     runner = web.AppRunner(app)
     await runner.setup()
     port = int(os.environ.get("PORT", 8080))
     site = web.TCPSite(runner, '0.0.0.0', port)
+    await site.start()
     
-    # Ham serverni, ham botni parallel ishga tushirish
-    await asyncio.gather(
-        site.start(),
-        dp.start_polling(bot)
-    )
+    # Botni polling rejimida ishga tushirish
+    await dp.start_polling(bot)
 
 if __name__ == "__main__":
+    # Eng asosiysi: asyncio.run() ishlatamiz
     asyncio.run(main())
